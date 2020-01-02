@@ -67,7 +67,7 @@ async function saveItem(igItem) {
         preview_text: caption,
         photos: await mediaDownloads,
         tags: caption.match(/#[\w\d\-\.!\p{L}]+/gu) || [],
-        type: "html"
+        type: "text"
     }), 'utf8');
 }
 
