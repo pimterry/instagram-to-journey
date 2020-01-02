@@ -61,11 +61,10 @@ async function saveItem(igItem) {
         id,
         date_modified: Date.now(),
         date_journal: postedTime,
-        // TODO: Render as markdown?
         text: igItem.caption,
         preview_text: igItem.caption,
         photos: await mediaDownloads,
-        tags: [],
+        tags: igItem.caption.match(/#[\w\d\-\.!\p{L}]+/gu) || [],
         type: "html"
     }), 'utf8');
 }
