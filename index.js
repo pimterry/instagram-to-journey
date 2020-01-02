@@ -46,7 +46,8 @@ function saveMediaResponse(itemId, id, url, format) {
 }
 
 async function saveItem(igItem) {
-    const id = `${Date.now()}-item`;
+    const postedTime = new Date(igItem.timestamp).valueOf();
+    const id = `${postedTime}-item`;
 
     const mediaDownloads = Promise.all(
         igItem.children
@@ -59,7 +60,7 @@ async function saveItem(igItem) {
     return fs.writeFile(path.join(OUTPUT_PATH, `${id}.json`), JSON.stringify({
         id,
         date_modified: Date.now(),
-        date_journal: new Date(igItem.timestamp).valueOf(),
+        date_journal: postedTime,
         // TODO: Render as markdown?
         text: igItem.caption,
         preview_text: igItem.caption,
