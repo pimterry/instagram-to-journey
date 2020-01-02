@@ -36,7 +36,13 @@ function saveMediaResponse(itemId, id, url, format) {
             mediaFile.on('finish', resolve);
             response.body.on('error', reject);
         })
-    ).then(() => filename);
+    ).then(() => filename)
+    // Blindly retry if anything fails, after 1s delay
+    .catch(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        console.log(`Retrying ${url}`);
+        return saveMediaResponse(itemId, id, url, format);
+    });
 }
 
 async function saveItem(igItem) {
