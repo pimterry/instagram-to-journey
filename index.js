@@ -57,14 +57,16 @@ async function saveItem(igItem) {
         : [saveMediaResponse(id, igItem.id, igItem.media_url, igItem.media_type)]
     );
 
+    const caption = igItem.caption || '';
+
     return fs.writeFile(path.join(OUTPUT_PATH, `${id}.json`), JSON.stringify({
         id,
         date_modified: Date.now(),
         date_journal: postedTime,
-        text: igItem.caption,
-        preview_text: igItem.caption,
+        text: caption,
+        preview_text: caption,
         photos: await mediaDownloads,
-        tags: igItem.caption.match(/#[\w\d\-\.!\p{L}]+/gu) || [],
+        tags: caption.match(/#[\w\d\-\.!\p{L}]+/gu) || [],
         type: "html"
     }), 'utf8');
 }
