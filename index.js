@@ -1,5 +1,5 @@
 const path = require('path');
-const fs = require('fs').promises;
+const { promises: fs, createWriteStream } = require('fs');
 const querystring = require('querystring');
 const fetch = require('node-fetch');
 
@@ -25,21 +25,51 @@ async function getAllMedia(nextUrl) {
     }
 }
 
+function saveMediaResponse(itemId, id, url, format) {
+    const extension = format === 'VIDEO' ? 'mp4' : 'jpg';
+    const filename = `${itemId}-${id}.${extension}`;
+
+    return fetch(url).then((response) =>
+        new Promise((resolve, reject) => {
+            const mediaFile = createWriteStream(path.join(OUTPUT_PATH, filename));
+            response.body.pipe(mediaFile);
+            mediaFile.on('finish', resolve);
+            response.body.on('error', reject);
+        })
+    ).then(() => filename);
+}
+
+async function saveItem(igItem) {
+    const id = `${Date.now()}-item`;
+
+    const mediaDownloads = Promise.all(
+        igItem.children
+        ? igItem.children.data.map((child) =>
+            saveMediaResponse(id, child.id, child.media_url, child.media_type)
+        )
+        : [saveMediaResponse(id, igItem.id, igItem.media_url, igItem.media_type)]
+    );
+
+    return fs.writeFile(path.join(OUTPUT_PATH, `${id}.json`), JSON.stringify({
+        id,
+        date_modified: Date.now(),
+        date_journal: new Date(igItem.timestamp).valueOf(),
+        // TODO: Render as markdown?
+        text: igItem.caption,
+        preview_text: igItem.caption,
+        photos: await mediaDownloads,
+        tags: [],
+        type: "html"
+    }), 'utf8');
+}
+
 const OUTPUT_PATH = path.join(__dirname, 'output');
 
 getAllMedia().then((media) => {
     console.log(`Loaded ${media.length} results`);
+    return fs.mkdir(OUTPUT_PATH).catch(() => {}).then(() => {
+        return Promise.all(media.map(saveItem));
 
-    return fs.mkdir(OUTPUT_PATH);
-}).then(() => {
-    // TODO: What's the minimum JSON file for a successful import?
-
-    // TODO:, For each post:
-    // - Download all referenced URLs
-    // - Create JSON linking to that URL
-    // - Give it a UUID id & filename
-    // - Parse the tags from the caption?
-    // - Save the content & JSON to the output directory
-
-    // TODO: Zip up the output directory & delete it
+        // TODO: Zip up the output directory & delete it
+    });
 }).catch(console.error);
